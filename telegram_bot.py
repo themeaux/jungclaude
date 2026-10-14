@@ -829,6 +829,51 @@ async def minha_jornada_command(update: Update, context: ContextTypes.DEFAULT_TY
             "Tente novamente mais tarde."
         )
 
+async def photo_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handler para /photo — Sienna shares an image from her persona album."""
+    import random as _random
+    import os as _os
+
+    user = update.effective_user
+    if not _is_admin_telegram_user(user):
+        logger.info("Acesso Telegram bloqueado para nao-admin em /photo: telegram_id=%s", getattr(user, "id", None))
+        await _reply_instance_private(update)
+        return
+    ensure_user_in_database(user)
+
+    from persona_layer import get_persona_layer
+    persona = get_persona_layer()
+    if not persona:
+        await update.message.reply_text("No persona album is configured for this instance.")
+        return
+
+    album_dir = _os.path.join(persona.root, "images")
+    if not _os.path.isdir(album_dir):
+        await update.message.reply_text(
+            "My album folder is empty here. Copy images into persona/sienna/images/ and try again."
+        )
+        return
+
+    files = [
+        f for f in sorted(_os.listdir(album_dir))
+        if f.lower().endswith((".jpg", ".jpeg", ".png", ".webp"))
+    ]
+    if not files:
+        await update.message.reply_text("My album folder has no images yet.")
+        return
+
+    chosen = _random.choice(files)
+    path = _os.path.join(album_dir, chosen)
+    caption = persona.build_photo_caption(chosen)
+    try:
+        with open(path, "rb") as img:
+            await update.message.reply_photo(photo=img, caption=caption)
+        logger.info("[PERSONA] foto compartilhada: %s", chosen)
+    except Exception as exc:
+        logger.warning("[PERSONA] falha ao enviar foto %s: %s", chosen, exc)
+        await update.message.reply_text(f"Could not send that one ({chosen}). Try again.")
+
+
 async def stats_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handler para /stats - estatísticas completas (Admin Only)"""
 

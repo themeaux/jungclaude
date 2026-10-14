@@ -32,7 +32,7 @@ os.environ["ANONYMIZED_TELEMETRY"] = "False"
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 # Importar o bot
-from telegram_bot import bot_state, start_command, stats_command, minha_jornada_command, reset_command, meu_perfil_command, job_command
+from telegram_bot import bot_state, start_command, stats_command, minha_jornada_command, reset_command, meu_perfil_command, job_command, photo_command
 
 from blog_feed import _load_blog_living_state, _load_blogdojung_entries
 from telegram.ext import Application, CommandHandler, MessageHandler, filters
@@ -215,6 +215,7 @@ async def lifespan(app: FastAPI):
     telegram_app.add_handler(CommandHandler("reset", reset_command))
     telegram_app.add_handler(CommandHandler("meu_perfil", meu_perfil_command))
     telegram_app.add_handler(CommandHandler("job", job_command))
+    telegram_app.add_handler(CommandHandler("photo", photo_command))
 
     # Handler de mensagens (precisamos importar a função handle_message se ela existir,
     # ou definir aqui se estiver dentro do main no original.

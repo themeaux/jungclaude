@@ -244,6 +244,20 @@ class PersonaLayer:
         logger.info("[PERSONA] persona_core composto: %d chars", len(text))
         return text
 
+    _PHOTO_CAPTIONS = [
+        "here — this one felt like today.",
+        "found this in my camera roll. still like it.",
+        "took this a while back. the light was doing something good.",
+        "for you. no context, just because.",
+        "this one. don't overthink it.",
+        "proof i actually leave the studio sometimes.",
+    ]
+
+    def build_photo_caption(self, filename: str = "") -> str:
+        """An in-character caption for a shared album photo."""
+        import random
+        return random.choice(self._PHOTO_CAPTIONS)
+
     def build_image_canon(self) -> str:
         """Physical canon constraints for image-generation phases."""
         bible = self.bible_text
