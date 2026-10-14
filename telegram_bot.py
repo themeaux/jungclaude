@@ -847,28 +847,48 @@ async def photo_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("No persona album is configured for this instance.")
         return
 
-    album_dir = _os.path.join(persona.root, "images")
-    if not _os.path.isdir(album_dir):
+    import urllib.request as _ureq
+    import io as _io
+    import json as _json
+
+    base_url = _os.getenv(
+        "PERSONA_IMAGE_API",
+        "http://localhost:3001/api/subjects/sienna/images",
+    )
+    inventory_url = _os.getenv(
+        "PERSONA_IMAGE_INVENTORY",
+        "http://localhost:3001/api/subjects/sienna",
+    )
+
+    try:
+        with _ureq.urlopen(inventory_url, timeout=10) as resp:
+            payload = _json.loads(resp.read().decode("utf-8"))
+    except Exception as exc:
+        logger.warning("[PERSONA] inventario indisponivel (%s): %s", inventory_url, exc)
         await update.message.reply_text(
-            "My album folder is empty here. Copy images into persona/sienna/images/ and try again."
+            "My photo service isn't up right now. Start it and try again."
         )
         return
 
-    files = [
-        f for f in sorted(_os.listdir(album_dir))
-        if f.lower().endswith((".jpg", ".jpeg", ".png", ".webp"))
-    ]
-    if not files:
-        await update.message.reply_text("My album folder has no images yet.")
+    images = payload.get("images") or []
+    if not images:
+        await update.message.reply_text("My album looks empty right now.")
         return
 
-    chosen = _random.choice(files)
-    path = _os.path.join(album_dir, chosen)
+    chosen_entry = _random.choice(images)
+    chosen = chosen_entry.get("filename") or chosen_entry.get("name")
+    if not chosen:
+        await update.message.reply_text("Could not pick an image this time.")
+        return
+
     caption = persona.build_photo_caption(chosen)
     try:
-        with open(path, "rb") as img:
-            await update.message.reply_photo(photo=img, caption=caption)
-        logger.info("[PERSONA] foto compartilhada: %s", chosen)
+        with _ureq.urlopen(f"{base_url}/{chosen}", timeout=30) as resp:
+            data = resp.read()
+        img = _io.BytesIO(data)
+        img.name = chosen
+        await update.message.reply_photo(photo=img, caption=caption)
+        logger.info("[PERSONA] foto compartilhada via content server: %s", chosen)
     except Exception as exc:
         logger.warning("[PERSONA] falha ao enviar foto %s: %s", chosen, exc)
         await update.message.reply_text(f"Could not send that one ({chosen}). Try again.")
