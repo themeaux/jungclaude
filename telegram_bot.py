@@ -853,11 +853,11 @@ async def photo_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     base_url = _os.getenv(
         "PERSONA_IMAGE_API",
-        "http://localhost:3001/api/images",
+        "http://localhost:3001/api/album",
     )
     inventory_url = _os.getenv(
         "PERSONA_IMAGE_INVENTORY",
-        "http://localhost:3001/api/inventory",
+        "http://localhost:3001/api/album",
     )
 
     try:
@@ -870,15 +870,10 @@ async def photo_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         return
 
-    # Inventory shape: {"images": [...]} or a bare list; entries have
-    # filename/name fields depending on classifier section.
+    # SFW album contract: {"kind": "sfw_album", "count": N, "images": [...]}
     images = []
     if isinstance(payload, dict):
-        # image-api inventory shape: {"sources": [...], "venice": [...]}
-        for key in ("sources", "venice", "images"):
-            section = payload.get(key)
-            if isinstance(section, list):
-                images.extend(section)
+        images = payload.get("images") or []
     elif isinstance(payload, list):
         images = payload
     if not images:
