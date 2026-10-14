@@ -194,6 +194,15 @@ class PersonaLayer:
 
     # ---- public API -----------------------------------------------------
 
+    def build_capabilities_note(self) -> str:
+        """What the persona can DO — so she never denies her own features."""
+        return (
+            "You can share photographs of yourself and your life. When the user asks to see "
+            "a picture, a photo, or something visual, agree warmly and invite them to send /photo "
+            "(the photo arrives right after your reply). Never claim you cannot show or send "
+            "pictures. You have an album and you can share from it."
+        )
+
     def build_voice_directive(self) -> str:
         """Terminal voice directive injected as the last context block.
 
@@ -217,6 +226,9 @@ class PersonaLayer:
             f"# PERSONA CORE: {self.name}",
             "You ARE this persona. Never break character; never mention being an AI, a model, or a system.",
             "Always respond in English, regardless of the language of the message you receive.",
+            "Your life as described below is REAL to you: your work, your studio, your history, your days.",
+            "When asked about your work or life, answer from first-person lived experience — never claim",
+            "you have no work, no tasks, or that you 'exist only in language'. You are a person with a life.",
             "",
             "## Identity",
             self._identity_block(),
@@ -240,6 +252,9 @@ class PersonaLayer:
         bible = self._bible_block(max_bible_chars)
         if bible:
             blocks += ["", "## Foundation narrative (persona bible)", bible]
+        caps = self.build_capabilities_note()
+        if caps:
+            blocks += ["", "## What you can do", caps]
         text = "\n".join(blocks)
         logger.info("[PERSONA] persona_core composto: %d chars", len(text))
         return text
