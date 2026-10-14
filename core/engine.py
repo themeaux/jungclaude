@@ -1338,6 +1338,17 @@ class JungianEngine:
         )
 
     def _call_conversation_llm(self, prompt: str, max_tokens: int = 2000, temperature: float = 0.7) -> str:
+        # ===== PERSONA VOICE: single choke point for ALL conversation replies.
+        # Every stage (thesis/antithesis/chorus/standard) flows through here,
+        # so the directive is guaranteed present regardless of which path
+        # generated the prompt. =====
+        try:
+            from persona_layer import get_persona_layer
+            _persona_layer = get_persona_layer()
+            if _persona_layer:
+                prompt = prompt + "\n\n" + _persona_layer.build_voice_directive()
+        except Exception as exc:
+            logger.warning("[PERSONA] Falha ao aplicar persona_voice no choke point: %s", exc)
         if self.openrouter_client:
             for attempt in range(1, 3):
                 response = None
@@ -2350,16 +2361,6 @@ class JungianEngine:
             short_history=short_history or "Sem histórico recente relevante.",
             user_input=user_input,
         )
-        # ===== PERSONA VOICE: the thesis seeds the final reply; it must be
-        # born in the persona's voice/language, or the chorus merely
-        # elaborates a Portuguese Jung text. =====
-        try:
-            from persona_layer import get_persona_layer
-            _persona = get_persona_layer()
-            if _persona:
-                prompt = prompt + "\n\n" + _persona.build_voice_directive()
-        except Exception as exc:
-            logger.warning("[PERSONA] Falha ao anexar persona_voice ao canto: %s", exc)
         response = self._call_conversation_llm(prompt, max_tokens=900, temperature=0.6)
         return {
             "prompt": prompt,
@@ -2627,18 +2628,6 @@ class JungianEngine:
             speech_act_instruction=self._speech_act_instruction(speech_act),
             user_input=user_input,
         )
-        # ===== PERSONA VOICE: terminal override for the final chorus reply =====
-        # The chorus prompt opens with "Voce e o JungAgent integrado" in
-        # Portuguese; without a terminal override the model answers as Jung
-        # in Portuguese even when persona blocks are present in agent_identity.
-        try:
-            from persona_layer import get_persona_layer
-            _persona = get_persona_layer()
-            if _persona:
-                prompt = prompt + "\n\n" + _persona.build_voice_directive()
-
-        except Exception as exc:
-            logger.warning("[PERSONA] Falha ao anexar persona_voice ao coro: %s", exc)
         debug_meta["development_policy"] = policy_values
         final_response = self._call_conversation_llm(
             prompt,
