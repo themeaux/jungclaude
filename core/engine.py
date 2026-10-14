@@ -2617,6 +2617,18 @@ class JungianEngine:
             speech_act_instruction=self._speech_act_instruction(speech_act),
             user_input=user_input,
         )
+        # ===== PERSONA VOICE: terminal override for the final chorus reply =====
+        # The chorus prompt opens with "Voce e o JungAgent integrado" in
+        # Portuguese; without a terminal override the model answers as Jung
+        # in Portuguese even when persona blocks are present in agent_identity.
+        try:
+            from persona_layer import get_persona_layer
+            _persona = get_persona_layer()
+            if _persona:
+                prompt = prompt + "\n\n" + _persona.build_voice_directive()
+
+        except Exception as exc:
+            logger.warning("[PERSONA] Falha ao anexar persona_voice ao coro: %s", exc)
         debug_meta["development_policy"] = policy_values
         final_response = self._call_conversation_llm(
             prompt,
