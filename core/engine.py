@@ -950,6 +950,20 @@ class JungianEngine:
                     )
             except Exception as exc:
                 logger.warning("[IDENTITY] Falha ao obter contexto de identidade: %s", exc)
+        # ===== PERSONA LAYER: canon do persona injetado no contexto =====
+        try:
+            from persona_layer import get_persona_layer
+            persona = get_persona_layer()
+            if persona:
+                persona_ctx = persona.build_persona_context()
+                if persona_ctx:
+                    add("persona_core", persona_ctx)
+                    logger.info(
+                        "[PERSONA] persona_core injetado: %s chars",
+                        len(persona_ctx),
+                    )
+        except Exception as exc:
+            logger.warning("[PERSONA] Falha ao injetar persona_core: %s", exc)
 
         if is_admin:
             add(
