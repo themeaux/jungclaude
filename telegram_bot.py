@@ -541,7 +541,7 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"- Conversas registradas: {total_messages}\n"
         f"- Primeira interacao: {since}\n\n"
         "*Atalhos uteis:*\n"
-        "- /meu_perfil para ler seu perfil atual\n"
+        "- /meu\_perfil para ler seu perfil atual\n"
         "- /stats para um retrato tecnico da instancia\n"
         "- /reset para reiniciar a memoria conversacional\n"
         "- /job para abrir um trabalho no modulo Work\n\n"
