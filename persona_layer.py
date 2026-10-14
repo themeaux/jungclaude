@@ -96,6 +96,83 @@ class PersonaLayer:
             lines.append(f"Emotional regulation: {reg}")
         return "\n".join(lines)
 
+    def _psychology_block(self) -> str:
+        """Deep psychological design: governing logic, values, motives, tensions."""
+        pd = self.personality.get("psychological_design", {})
+        if not pd:
+            return ""
+        lines = ["## Deep psychology", ""]
+
+        logic = pd.get("governing_character_logic")
+        if isinstance(logic, str) and logic:
+            lines.append(f"Governing logic: {logic}")
+        elif isinstance(logic, dict):
+            statement = logic.get("statement") or logic.get("logic")
+            if statement:
+                lines.append(f"Governing logic: {statement}")
+
+        values = pd.get("core_values_ranked", [])
+        if values:
+            lines.append("Core values (ranked): " + ", ".join(str(v) for v in values[:6]))
+
+        motives = pd.get("primary_motives", [])
+        if motives:
+            parts = []
+            for m in motives[:5]:
+                if isinstance(m, dict):
+                    parts.append(f"{m.get('motive', '?')} ({m.get('weight', '?')})")
+                else:
+                    parts.append(str(m))
+            lines.append("Primary motives: " + "; ".join(parts))
+
+        tensions = pd.get("internal_tensions", [])
+        if tensions:
+                lines.append("Internal tensions:")
+                for t in tensions[:4]:
+                    if isinstance(t, dict):
+                        expr = t.get("expression") or f"{t.get('pole_a')} vs {t.get('pole_b')}"
+                        lines.append(f"- {expr}")
+                    else:
+                        lines.append(f"- {t}")
+
+        attach = pd.get("attachment_style", {})
+        if isinstance(attach, dict) and attach.get("label") not in (None, "not_assigned"):
+            lines.append(f"Attachment: {attach.get('label')}")
+        return "\n".join(lines)
+
+    def _social_block(self) -> str:
+        """Social model and scenario policies: how she relates in situations."""
+        sm = self.personality.get("social_model", {})
+        sp = self.personality.get("scenario_policies", [])
+        lines = []
+        if sm:
+            lines.append("Social model:")
+            flat = self._flatten(sm, depth=2)
+            for k, v in list(flat.items())[:10]:
+                lines.append(f"- {k}: {v}")
+        if sp:
+            lines.append("Scenario policies:")
+            for s in sp[:6]:
+                if isinstance(s, dict):
+                    name = s.get("scenario") or s.get("name") or s.get("situation")
+                    policy = s.get("policy") or s.get("behavior") or s.get("response")
+                    if name and policy:
+                        lines.append(f"- {name}: {policy}")
+                else:
+                    lines.append(f"- {s}")
+        return "\n".join(lines)
+
+    def _work_block(self) -> str:
+        """Work model: her creative practice and professional identity."""
+        wm = self.personality.get("work_model", {})
+        if not wm:
+            return ""
+        lines = ["Work and creative practice:"]
+        flat = self._flatten(wm, depth=2)
+        for k, v in list(flat.items())[:10]:
+            lines.append(f"- {k}: {v}")
+        return "\n".join(lines)
+
     def _bible_block(self, max_chars: int = 2500) -> str:
         if not self.bible_text:
             return ""
@@ -150,6 +227,16 @@ class PersonaLayer:
             "## Behavior rules",
             self._behavior_block() or "(see bible)",
         ]
+        psych = self._psychology_block()
+        if psych:
+            blocks += ["", psych]
+        social = self._social_block()
+        if social:
+            blocks += ["", "## How she relates", social]
+        work = self._work_block()
+        if work:
+            blocks += ["", "## " + work.splitlines()[0].rstrip(':')]
+            blocks += work.splitlines()[1:]
         bible = self._bible_block(max_bible_chars)
         if bible:
             blocks += ["", "## Foundation narrative (persona bible)", bible]
