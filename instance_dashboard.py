@@ -3,14 +3,18 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 import re
+import sqlite3
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 from instance_settings import get_instance_settings_service
 from instance_config import ADMIN_USER_ID, AGENT_INSTANCE, instance_summary
 from instance_setup import build_instance_setup_payload
+
+logger = logging.getLogger(__name__)
 
 
 def _row_to_dict(row) -> Optional[Dict[str, Any]]:
@@ -19,7 +23,11 @@ def _row_to_dict(row) -> Optional[Dict[str, Any]]:
 
 def _fetch_one(db, query: str, params: tuple = ()) -> Optional[Dict[str, Any]]:
     cursor = db.conn.cursor()
-    cursor.execute(query, params)
+    try:
+        cursor.execute(query, params)
+    except sqlite3.OperationalError as exc:
+        logger.warning("[COCKPIT] query falhou (tabela ausente?): %s", exc)
+        return None
     return _row_to_dict(cursor.fetchone())
 
 
