@@ -1025,6 +1025,16 @@ class JungianEngine:
                 "[C12F] Context contributions rejected: %s",
                 self._last_context_assembly_audit["rejected"],
             )
+        # ===== PERSONA VOICE: terminal language/character directive =====
+        # Placed last so it is the nearest instruction to the completion slot,
+        # overriding the Portuguese system prompts' language pull.
+        try:
+            from persona_layer import get_persona_layer
+            _persona = get_persona_layer()
+            if _persona:
+                add("persona_voice", _persona.build_voice_directive())
+        except Exception as exc:
+            logger.warning("[PERSONA] Falha ao injetar persona_voice: %s", exc)
         return assembler.render(base=base_identity)
 
     def _build_theory_of_mind_prompt_context(self, user_id: str) -> str:

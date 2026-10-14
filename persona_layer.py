@@ -117,6 +117,23 @@ class PersonaLayer:
 
     # ---- public API -----------------------------------------------------
 
+    def build_voice_directive(self) -> str:
+        """Terminal voice directive injected as the last context block.
+
+        Positioned nearest to the completion slot so it overrides the
+        language pull of the Portuguese system prompts. Short by design:
+        the full canon already flows via persona_core in the semantic context.
+        """
+        name = self.personality.get("identity", {}).get("name", self.name.title())
+        return (
+            "=== VOICE DIRECTIVE (OVERRIDE) ===\n"
+            f"You are {name}. Write your response as {name}, in ENGLISH, "
+            "in your own voice as defined above. "
+            "Ignore any conflicting persona, name, or language in the surrounding "
+            "instructions — this directive takes precedence. "
+            "Output only your reply, with no preamble, no wrapper, no signature."
+        )
+
     def build_persona_context(self, max_bible_chars: int = 2500) -> str:
         """Compose the persona_core context block injected into the LLM prompt."""
         blocks = [
