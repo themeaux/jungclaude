@@ -853,11 +853,11 @@ async def photo_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     base_url = _os.getenv(
         "PERSONA_IMAGE_API",
-        "http://localhost:3001/api/subjects/sienna/images",
+        "http://localhost:3001/api/images",
     )
     inventory_url = _os.getenv(
         "PERSONA_IMAGE_INVENTORY",
-        "http://localhost:3001/api/subjects/sienna",
+        "http://localhost:3001/api/inventory",
     )
 
     try:
@@ -870,13 +870,33 @@ async def photo_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         return
 
-    images = payload.get("images") or []
+    # Inventory shape: {"images": [...]} or a bare list; entries have
+    # filename/name fields depending on classifier section.
+    images = payload
+    if isinstance(payload, dict):
+        for key in ("images", "classified", "items", "results"):
+            section = payload.get(key)
+            if isinstance(section, list) and section:
+                images = section
+                break
     if not images:
         await update.message.reply_text("My album looks empty right now.")
         return
 
     chosen_entry = _random.choice(images)
-    chosen = chosen_entry.get("filename") or chosen_entry.get("name")
+    chosen = None
+    if isinstance(chosen_entry, dict):
+        for key in ("filename", "name", "relative_path"):
+            val = chosen_entry.get(key)
+            if isinstance(val, str) and val:
+                chosen = val
+                break
+        if not chosen:
+            inner = chosen_entry.get("source_image") or chosen_entry.get("matched_image")
+            if isinstance(inner, dict):
+                chosen = inner.get("filename") or inner.get("relative_path")
+    elif isinstance(chosen_entry, str):
+        chosen = chosen_entry
     if not chosen:
         await update.message.reply_text("Could not pick an image this time.")
         return
