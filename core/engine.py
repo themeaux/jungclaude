@@ -2350,6 +2350,16 @@ class JungianEngine:
             short_history=short_history or "Sem histórico recente relevante.",
             user_input=user_input,
         )
+        # ===== PERSONA VOICE: the thesis seeds the final reply; it must be
+        # born in the persona's voice/language, or the chorus merely
+        # elaborates a Portuguese Jung text. =====
+        try:
+            from persona_layer import get_persona_layer
+            _persona = get_persona_layer()
+            if _persona:
+                prompt = prompt + "\n\n" + _persona.build_voice_directive()
+        except Exception as exc:
+            logger.warning("[PERSONA] Falha ao anexar persona_voice ao canto: %s", exc)
         response = self._call_conversation_llm(prompt, max_tokens=900, temperature=0.6)
         return {
             "prompt": prompt,
