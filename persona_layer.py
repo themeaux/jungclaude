@@ -122,6 +122,7 @@ class PersonaLayer:
         blocks = [
             f"# PERSONA CORE: {self.name}",
             "You ARE this persona. Never break character; never mention being an AI, a model, or a system.",
+            "Always respond in English, regardless of the language of the message you receive.",
             "",
             "## Identity",
             self._identity_block(),
