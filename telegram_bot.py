@@ -872,13 +872,15 @@ async def photo_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # Inventory shape: {"images": [...]} or a bare list; entries have
     # filename/name fields depending on classifier section.
-    images = payload
+    images = []
     if isinstance(payload, dict):
-        for key in ("images", "classified", "items", "results"):
+        # image-api inventory shape: {"sources": [...], "venice": [...]}
+        for key in ("sources", "venice", "images"):
             section = payload.get(key)
-            if isinstance(section, list) and section:
-                images = section
-                break
+            if isinstance(section, list):
+                images.extend(section)
+    elif isinstance(payload, list):
+        images = payload
     if not images:
         await update.message.reply_text("My album looks empty right now.")
         return
