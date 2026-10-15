@@ -268,7 +268,7 @@ Retorne APENAS o JSON no formato especificado, sem texto adicional."""
                 temperature=0.1,
                 messages=[{"role": "user", "content": prompt}]
             )
-            response_text = response.content[0].text.strip()
+            response_text = ((response.content[0].text if response.content else "") or "").strip()
 
             # Parsear JSON - Melhorado para lidar com diferentes formatos
             # Remover markdown code blocks se presentes

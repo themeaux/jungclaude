@@ -284,7 +284,7 @@ class FactExtractionDatabaseMixin:
                 logger.info(f"âœ… Processados: {n_new} fatos novos, {n_corr} correÃ§Ãµes")
 
         except Exception as e:
-            logger.error(f"âŒ Erro na extraÃ§Ã£o com LLM: {e}")
+            logger.error("Erro na extracao com LLM: %s", e)
             import traceback
             logger.error(traceback.format_exc())
 
