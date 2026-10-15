@@ -53,11 +53,11 @@ OWNERSHIP_CONTRACTS: Tuple[CognitiveOwnershipContract, ...] = (
     # user data, so it is instance-global and safe in any prompt.
     _c("persona_core", ("persona/<name>/personality.json",),
        INSTANCE_GLOBAL, INSTANCE_GLOBAL, ("agent_instance",), ("agent_instance",),
-       _GLOBAL,
+       INSTANCE_GLOBAL,
        "Designed persona canon: identity, voice, psychology, capabilities.",
        "Injected verbatim into prompts as the persona's framing.",
        "Static files; no private-derived content to retain or delete.",
-       "Instance policy; the configured persona is part of the instance definition.",
+       INSTANCE_ONLY,
        "Persona canon predates Relations; it is configuration, not memory.",
        READY, "none",
        "Persona canon is static instance configuration shared across Relations."),
