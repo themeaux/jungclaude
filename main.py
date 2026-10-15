@@ -216,7 +216,7 @@ async def lifespan(app: FastAPI):
     telegram_app.add_handler(CommandHandler("meu_perfil", meu_perfil_command))
     telegram_app.add_handler(CommandHandler("job", job_command))
     telegram_app.add_handler(CommandHandler("photo", photo_command))
-    telegram_app.add_handler(CommandHandler("photo-nsfw", photo_nsfw_command))
+    telegram_app.add_handler(CommandHandler("photo_nsfw", photo_nsfw_command))
 
     # Handler de mensagens (precisamos importar a função handle_message se ela existir,
     # ou definir aqui se estiver dentro do main no original.
