@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 DEFAULT_MODEL = os.getenv("INTERNAL_MODEL", "z-ai/glm-5")
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 VENICE_BASE_URL = os.getenv("VENICE_BASE_URL", "https://api.venice.ai/api/v1")
-VENICE_MODEL = os.getenv("VENICE_MODEL", "venice-uncensored")
+VENICE_MODEL = os.getenv("VENICE_MODEL", "zai-org-glm-5")
 
 
 # ============================================================
@@ -193,12 +193,19 @@ class VeniceProvider(LLMProvider):
         from openai import OpenAI
         client = OpenAI(base_url=VENICE_BASE_URL, api_key=self.api_key)
         try:
-            resp = client.chat.completions.create(
-                model=self.model,
-                max_tokens=max_tokens,
-                temperature=temperature,
-                messages=[{"role": "user", "content": prompt}],
-            )
+            request_kwargs = {
+                "model": self.model,
+                "max_tokens": max_tokens,
+                "temperature": temperature,
+                "messages": [{"role": "user", "content": prompt}],
+            }
+            # Venice-specific extras; disable their default system prompt so
+            # the persona canon is the only framing (docs: venice_parameters).
+            venice_params = {"include_venice_system_prompt": False}
+            if os.getenv("VENICE_ENABLE_WEB_SEARCH", "").strip().lower() in ("1", "true", "yes", "on"):
+                venice_params["enable_web_search"] = "auto"
+            request_kwargs["extra_body"] = {"venice_parameters": venice_params}
+            resp = client.chat.completions.create(**request_kwargs)
             return resp.choices[0].message.content
         except Exception as e:
             logger.error(f"❌ Erro ao chamar Venice: {e}")
