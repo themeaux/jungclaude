@@ -1692,6 +1692,7 @@ try:
     if hasattr(bot_state, 'db') and bot_state.db:
         init_relations_routes(bot_state.db)
         app.include_router(relations_router)
+
         logger.info("✅ Rotas de Relations carregadas")
     else:
         logger.warning("⚠️  DatabaseManager não disponível - Relations routes não carregadas")
@@ -1699,6 +1700,12 @@ except Exception as e:
     import traceback
     logger.error(f"❌ Erro ao carregar Relations routes: {e}")
     logger.error(traceback.format_exc())
+
+    # ===== API routes (programmatic conversation access) =====
+    from admin_web.routes.api_routes import router as api_router
+    app.include_router(api_router)
+    logger.info('✅ Rotas API carregadas (api/v1)')
+
 
 # Rotas legadas de psicometria
 try:
