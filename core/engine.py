@@ -62,6 +62,16 @@ class JungianEngine:
             logger.info(f"✅ OpenRouter client inicializado (modelo: {Config.CONVERSATION_MODEL})")
         else:
             self.openrouter_client = None
+        # ===== VENICE conversation client (private, uncensored) =====
+        self.venice_client = None
+        _venice_key = os.getenv("VENICE_API_KEY")
+        if _venice_key:
+            self.venice_client = OpenAI(
+                base_url=os.getenv("VENICE_BASE_URL", "https://api.venice.ai/api/v1"),
+                api_key=_venice_key,
+                timeout=60.0,
+            )
+            logger.info(f"✅ Venice client inicializado (modelo: {os.getenv('VENICE_MODEL', 'zai-org-glm-5')})")
             logger.warning("⚠️ OPENROUTER_API_KEY não configurada - usando Claude para conversação")
 
         # 🧠 Context builder de identidade do agente (Fase 4)
@@ -1349,6 +1359,26 @@ class JungianEngine:
                 prompt = prompt + "\n\n" + _persona_layer.build_voice_directive()
         except Exception as exc:
             logger.warning("[PERSONA] Falha ao aplicar persona_voice no choke point: %s", exc)
+        # ===== VENICE routing: when LLM_PROVIDER=venice, conversation goes through Venice =====
+        if self.venice_client and os.getenv("LLM_PROVIDER", "").strip().lower() == "venice":
+            try:
+                response = self.venice_client.chat.completions.create(
+                    model=os.getenv("VENICE_MODEL", "zai-org-glm-5"),
+                    max_tokens=max_tokens,
+                    temperature=temperature,
+                    messages=[{"role": "user", "content": prompt}],
+                    extra_body={"venice_parameters": {"include_venice_system_prompt": False}},
+                )
+                choice = response.choices[0]
+                return self._validate_llm_text(
+                    choice.message.content,
+                    provider="venice:" + os.getenv("VENICE_MODEL", "zai-org-glm-5"),
+                    finish_reason=getattr(choice, "finish_reason", None),
+                )
+            except Exception as exc:
+                logger.warning(
+                    "Venice conversation call failed; falling back to OpenRouter: %s", exc
+                )
         if self.openrouter_client:
             for attempt in range(1, 3):
                 response = None
