@@ -48,6 +48,19 @@ _REL = ("agent_instance", "relation_id", "participant_user_id")
 _GLOBAL = ("agent_instance", "source_refs", "influence_class")
 
 OWNERSHIP_CONTRACTS: Tuple[CognitiveOwnershipContract, ...] = (
+    # Persona canon (persona_layer.py): designed identity injected per instance.
+    # Static config content (files under persona/<name>/), not derived from
+    # user data, so it is instance-global and safe in any prompt.
+    _c("persona_core", ("persona/<name>/personality.json",),
+       INSTANCE_GLOBAL, INSTANCE_GLOBAL, ("agent_instance",), ("agent_instance",),
+       _GLOBAL,
+       "Designed persona canon: identity, voice, psychology, capabilities.",
+       "Injected verbatim into prompts as the persona's framing.",
+       "Static files; no private-derived content to retain or delete.",
+       "Instance policy; the configured persona is part of the instance definition.",
+       "Persona canon predates Relations; it is configuration, not memory.",
+       READY, "none",
+       "Persona canon is static instance configuration shared across Relations."),
     _c("relation_registry", ("agent_relations",), RELATION_PRIVATE, RELATION_PRIVATE,
        ("agent_instance", "org_id", "relation_id", "participant_user_id"),
        ("agent_instance", "org_id", "relation_id", "participant_user_id"),
