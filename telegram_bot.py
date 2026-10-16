@@ -541,7 +541,7 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"- Conversas registradas: {total_messages}\n"
         f"- Primeira interacao: {since}\n\n"
         "*Atalhos uteis:*\n"
-        "- /meu_perfil para ler seu perfil atual\n"
+        r"- /meu\_perfil para ler seu perfil atual" "\n"
         "- /stats para um retrato tecnico da instancia\n"
         "- /reset para reiniciar a memoria conversacional\n"
         "- /job para abrir um trabalho no modulo Work\n\n"
@@ -828,6 +828,170 @@ async def minha_jornada_command(update: Update, context: ContextTypes.DEFAULT_TY
             "❌ *Erro ao gerar análise de desenvolvimento*\n\n"
             "Tente novamente mais tarde."
         )
+
+async def photo_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handler para /photo — Sienna shares an image from her persona album."""
+    import random as _random
+    import os as _os
+
+    user = update.effective_user
+    if not _is_admin_telegram_user(user):
+        logger.info("Acesso Telegram bloqueado para nao-admin em /photo: telegram_id=%s", getattr(user, "id", None))
+        await _reply_instance_private(update)
+        return
+    ensure_user_in_database(user)
+
+    from persona_layer import get_persona_layer
+    persona = get_persona_layer()
+    if not persona:
+        await update.message.reply_text("No persona album is configured for this instance.")
+        return
+
+    import urllib.request as _ureq
+    import io as _io
+    import json as _json
+
+    base_url = _os.getenv(
+        "PERSONA_IMAGE_API",
+        "http://localhost:3001/api/subject/sienna/album",
+    )
+    inventory_url = _os.getenv(
+        "PERSONA_IMAGE_INVENTORY",
+        "http://localhost:3001/api/subject/sienna/album",
+    )
+
+    try:
+        with _ureq.urlopen(inventory_url, timeout=10) as resp:
+            payload = _json.loads(resp.read().decode("utf-8"))
+    except Exception as exc:
+        logger.warning("[PERSONA] inventario indisponivel (%s): %s", inventory_url, exc)
+        await update.message.reply_text(
+            "My photo service isn't up right now. Start it and try again."
+        )
+        return
+
+    # SFW album contract: {"kind": "sfw_album", "count": N, "images": [...]}
+    images = []
+    if isinstance(payload, dict):
+        images = payload.get("images") or []
+    elif isinstance(payload, list):
+        images = payload
+    if not images:
+        await update.message.reply_text("My album looks empty right now.")
+        return
+
+    chosen_entry = _random.choice(images)
+    chosen = None
+    if isinstance(chosen_entry, dict):
+        for key in ("filename", "name", "relative_path"):
+            val = chosen_entry.get(key)
+            if isinstance(val, str) and val:
+                chosen = val
+                break
+        if not chosen:
+            inner = chosen_entry.get("source_image") or chosen_entry.get("matched_image")
+            if isinstance(inner, dict):
+                chosen = inner.get("filename") or inner.get("relative_path")
+    elif isinstance(chosen_entry, str):
+        chosen = chosen_entry
+    if not chosen:
+        await update.message.reply_text("Could not pick an image this time.")
+        return
+
+    caption = persona.build_photo_caption(chosen)
+    try:
+        with _ureq.urlopen(f"{base_url}/{chosen}", timeout=30) as resp:
+            data = resp.read()
+        img = _io.BytesIO(data)
+        img.name = chosen
+        await update.message.reply_photo(photo=img, caption=caption)
+        logger.info("[PERSONA] foto compartilhada via content server: %s", chosen)
+    except Exception as exc:
+        logger.warning("[PERSONA] falha ao enviar foto %s: %s", chosen, exc)
+        await update.message.reply_text(f"Could not send that one ({chosen}). Try again.")
+
+
+async def photo_nsfw_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handler para /photo-nsfw — Sienna shares a NSFW image (VeniceAI renders)."""
+    import random as _random
+    import os as _os
+
+    user = update.effective_user
+    if not _is_admin_telegram_user(user):
+        logger.info("Acesso Telegram bloqueado para nao-admin em /photo: telegram_id=%s", getattr(user, "id", None))
+        await _reply_instance_private(update)
+        return
+    ensure_user_in_database(user)
+
+    from persona_layer import get_persona_layer
+    persona = get_persona_layer()
+    if not persona:
+        await update.message.reply_text("No persona album is configured for this instance.")
+        return
+
+    import urllib.request as _ureq
+    import io as _io
+    import json as _json
+
+    base_url = _os.getenv(
+        "PERSONA_IMAGE_API",
+        "http://localhost:3001/api/subject/sienna/album-nsfw",
+    )
+    inventory_url = _os.getenv(
+        "PERSONA_IMAGE_INVENTORY",
+        "http://localhost:3001/api/subject/sienna/album-nsfw",
+    )
+
+    try:
+        with _ureq.urlopen(inventory_url, timeout=10) as resp:
+            payload = _json.loads(resp.read().decode("utf-8"))
+    except Exception as exc:
+        logger.warning("[PERSONA] inventario indisponivel (%s): %s", inventory_url, exc)
+        await update.message.reply_text(
+            "My photo service isn't up right now. Start it and try again."
+        )
+        return
+
+    # SFW album contract: {"kind": "sfw_album", "count": N, "images": [...]}
+    images = []
+    if isinstance(payload, dict):
+        images = payload.get("images") or []
+    elif isinstance(payload, list):
+        images = payload
+    if not images:
+        await update.message.reply_text("My album looks empty right now.")
+        return
+
+    chosen_entry = _random.choice(images)
+    chosen = None
+    if isinstance(chosen_entry, dict):
+        for key in ("filename", "name", "relative_path"):
+            val = chosen_entry.get(key)
+            if isinstance(val, str) and val:
+                chosen = val
+                break
+        if not chosen:
+            inner = chosen_entry.get("source_image") or chosen_entry.get("matched_image")
+            if isinstance(inner, dict):
+                chosen = inner.get("filename") or inner.get("relative_path")
+    elif isinstance(chosen_entry, str):
+        chosen = chosen_entry
+    if not chosen:
+        await update.message.reply_text("Could not pick an image this time.")
+        return
+
+    caption = persona.build_photo_caption(chosen)
+    try:
+        with _ureq.urlopen(f"{base_url}/{chosen}", timeout=30) as resp:
+            data = resp.read()
+        img = _io.BytesIO(data)
+        img.name = chosen
+        await update.message.reply_photo(photo=img, caption=caption)
+        logger.info("[PERSONA] foto NSFW compartilhada via content server: %s", chosen)
+    except Exception as exc:
+        logger.warning("[PERSONA] falha ao enviar foto %s: %s", chosen, exc)
+        await update.message.reply_text(f"Could not send that one ({chosen}). Try again.")
+
 
 async def stats_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handler para /stats - estatísticas completas (Admin Only)"""

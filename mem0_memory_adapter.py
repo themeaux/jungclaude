@@ -244,7 +244,7 @@ class Mem0MemoryAdapter:
                     continue
                 try:
                     batches.append(self._result_rows(
-                        self.mem.search(query=query, user_id=namespace, limit=limit)
+                        self.mem.search(query=query, filters={"user_id": namespace}, top_k=limit)
                     ))
                 except Exception as exc:
                     logger.warning("⚠️ [MEM0] Busca em namespace indisponível: %s", exc)
@@ -312,7 +312,7 @@ class Mem0MemoryAdapter:
             batches = []
             for namespace in (scoped_user_id, legacy_user_id):
                 if namespace:
-                    batches.append(self._result_rows(self.mem.get_all(user_id=namespace)))
+                    batches.append(self._result_rows(self.mem.get_all(filters={"user_id": namespace})))
             return self._merge_ranked_memories(
                 batches, sum(len(batch) for batch in batches)
             )
@@ -327,7 +327,7 @@ class Mem0MemoryAdapter:
     def health_check(self) -> bool:
         """Verifica se mem0 está operacional."""
         try:
-            self.mem.get_all(user_id="__health_check__")
+            self.mem.get_all(filters={"user_id": "__health_check__"})
             return True
         except Exception:
             return False

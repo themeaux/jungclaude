@@ -102,6 +102,13 @@ class HybridDatabaseManager(
         self.conn.row_factory = sqlite3.Row
         self.conn.execute("PRAGMA busy_timeout = 30000")
         self._init_sqlite_schema()
+        # ===== Rumination tables: create at boot so schedulers never race a lazy init =====
+        try:
+            from jung_rumination import RuminationEngine
+            RuminationEngine(self)
+            logger.info("Tabelas de ruminacao verificadas no boot (boot-order fix)")
+        except Exception as exc:
+            logger.warning("Nao foi possivel criar tabelas de ruminacao no boot: %s", exc)
         
         # ===== mem0/Qdrant: produÃ§Ã£o =====
         try:

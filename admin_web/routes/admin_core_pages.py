@@ -3,6 +3,10 @@ import platform
 from typing import Dict, Optional
 from urllib.parse import quote_plus
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 from fastapi import HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 

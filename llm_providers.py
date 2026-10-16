@@ -24,6 +24,8 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_MODEL = os.getenv("INTERNAL_MODEL", "z-ai/glm-5")
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
+VENICE_BASE_URL = os.getenv("VENICE_BASE_URL", "https://api.venice.ai/api/v1")
+VENICE_MODEL = os.getenv("VENICE_MODEL", "zai-org-glm-5")
 
 
 # ============================================================
@@ -173,10 +175,56 @@ class ClaudeProvider(LLMProvider):
 
 
 # ============================================================
-# FACTORY — OpenRouter primário, Claude fallback
+# ============================================================
+# VENICE PROVIDER (privado, sem censura)
+# ============================================================
+class VeniceProvider(LLMProvider):
+    """Provedor via Venice.ai — privado, uncensored, OpenAI-compatible."""
+
+    def __init__(self, model: str = VENICE_MODEL):
+        self.api_key = os.getenv("VENICE_API_KEY")
+        if not self.api_key:
+            raise ValueError("❌ VENICE_API_KEY não encontrado no .env")
+        self.model = model
+        logger.info(f"✅ VeniceProvider inicializado (modelo: {self.model})")
+
+    def get_response(self, prompt: str, temperature: float = 0.7,
+                     max_tokens: int = 2000) -> str:
+        from openai import OpenAI
+        client = OpenAI(base_url=VENICE_BASE_URL, api_key=self.api_key)
+        try:
+            request_kwargs = {
+                "model": self.model,
+                "max_tokens": max_tokens,
+                "temperature": temperature,
+                "messages": [{"role": "user", "content": prompt}],
+            }
+            # Venice-specific extras; disable their default system prompt so
+            # the persona canon is the only framing (docs: venice_parameters).
+            venice_params = {"include_venice_system_prompt": False}
+            if os.getenv("VENICE_ENABLE_WEB_SEARCH", "").strip().lower() in ("1", "true", "yes", "on"):
+                venice_params["enable_web_search"] = "auto"
+            request_kwargs["extra_body"] = {"venice_parameters": venice_params}
+            resp = client.chat.completions.create(**request_kwargs)
+            return resp.choices[0].message.content
+        except Exception as e:
+            logger.error(f"❌ Erro ao chamar Venice: {e}")
+            raise Exception(f"Erro ao chamar Venice: {e}")
+
+    def get_model_name(self) -> str:
+        return f"Venice ({self.model})"
+
+
+# FACTORY — Venice ou OpenRouter primário, Claude fallback
 # ============================================================
 
 def create_llm_provider(provider_name: Optional[str] = None) -> LLMProvider:
+    if provider_name == "venice" and os.getenv("VENICE_API_KEY"):
+        logger.info(f"🔧 Criando LLM Provider: Venice ({VENICE_MODEL})")
+        return VeniceProvider()
+    if os.getenv("LLM_PROVIDER", "").strip().lower() == "venice" and os.getenv("VENICE_API_KEY"):
+        logger.info(f"🔧 Criando LLM Provider: Venice ({VENICE_MODEL})")
+        return VeniceProvider()
     if os.getenv("OPENROUTER_API_KEY"):
         logger.info(f"🔧 Criando LLM Provider: OpenRouter ({DEFAULT_MODEL})")
         return OpenRouterProvider()

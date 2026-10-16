@@ -32,7 +32,7 @@ os.environ["ANONYMIZED_TELEMETRY"] = "False"
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 # Importar o bot
-from telegram_bot import bot_state, start_command, stats_command, minha_jornada_command, reset_command, meu_perfil_command, job_command
+from telegram_bot import bot_state, start_command, stats_command, minha_jornada_command, reset_command, meu_perfil_command, job_command, photo_command, photo_nsfw_command
 
 from blog_feed import _load_blog_living_state, _load_blogdojung_entries
 from telegram.ext import Application, CommandHandler, MessageHandler, filters
@@ -215,6 +215,13 @@ async def lifespan(app: FastAPI):
     telegram_app.add_handler(CommandHandler("reset", reset_command))
     telegram_app.add_handler(CommandHandler("meu_perfil", meu_perfil_command))
     telegram_app.add_handler(CommandHandler("job", job_command))
+    telegram_app.add_handler(CommandHandler("photo", photo_command))
+    telegram_app.add_handler(CommandHandler("photo_nsfw", photo_nsfw_command))
+    # Photo command aliases — user-instinct names for the same handlers
+    for alias in ("image", "pic", "pict", "picture"):
+        telegram_app.add_handler(CommandHandler(alias, photo_command))
+    for alias in ("image_nsfw", "pic_nsfw", "pict_nsfw", "picture_nsfw"):
+        telegram_app.add_handler(CommandHandler(alias, photo_nsfw_command))
 
     # Handler de mensagens (precisamos importar a função handle_message se ela existir,
     # ou definir aqui se estiver dentro do main no original.
@@ -1685,6 +1692,7 @@ try:
     if hasattr(bot_state, 'db') and bot_state.db:
         init_relations_routes(bot_state.db)
         app.include_router(relations_router)
+
         logger.info("✅ Rotas de Relations carregadas")
     else:
         logger.warning("⚠️  DatabaseManager não disponível - Relations routes não carregadas")
@@ -1692,6 +1700,15 @@ except Exception as e:
     import traceback
     logger.error(f"❌ Erro ao carregar Relations routes: {e}")
     logger.error(traceback.format_exc())
+
+# ===== API routes (programmatic conversation access) =====
+try:
+    from admin_web.routes.api_routes import router as api_router
+    app.include_router(api_router)
+    logger.info("✅ Rotas API carregadas (api/v1)")
+except Exception as e:
+    logger.error(f"❌ Erro ao carregar API routes: {e}")
+
 
 # Rotas legadas de psicometria
 try:
