@@ -1701,10 +1701,13 @@ except Exception as e:
     logger.error(f"❌ Erro ao carregar Relations routes: {e}")
     logger.error(traceback.format_exc())
 
-    # ===== API routes (programmatic conversation access) =====
+# ===== API routes (programmatic conversation access) =====
+try:
     from admin_web.routes.api_routes import router as api_router
     app.include_router(api_router)
-    logger.info('✅ Rotas API carregadas (api/v1)')
+    logger.info("✅ Rotas API carregadas (api/v1)")
+except Exception as e:
+    logger.error(f"❌ Erro ao carregar API routes: {e}")
 
 
 # Rotas legadas de psicometria
