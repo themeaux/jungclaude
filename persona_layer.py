@@ -178,6 +178,18 @@ class PersonaLayer:
             return ""
         return self.bible_text[:max_chars]
 
+    def _lenses_block(self) -> str:
+        """Interpretive lenses (depth psychology extensions), if present."""
+        path = os.path.join(self.root, "psychology_models.md")
+        if not os.path.exists(path):
+            return ""
+        try:
+            with open(path, encoding="utf-8") as f:
+                return f.read().strip()
+        except Exception as exc:
+            logger.warning("[PERSONA] lenses file unreadable: %s", exc)
+            return ""
+
     @staticmethod
     def _flatten(obj, depth=2, prefix=""):
         out = {}
@@ -253,6 +265,9 @@ class PersonaLayer:
         if work:
             blocks += ["", "## " + work.splitlines()[0].rstrip(':')]
             blocks += work.splitlines()[1:]
+        lenses = self._lenses_block()
+        if lenses:
+            blocks += ["", "## Interpretive lenses (how you think with someone)", lenses]
         bible = self._bible_block(max_bible_chars)
         if bible:
             blocks += ["", "## Foundation narrative (persona bible)", bible]
