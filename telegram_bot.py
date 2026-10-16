@@ -853,11 +853,11 @@ async def photo_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     base_url = _os.getenv(
         "PERSONA_IMAGE_API",
-        "http://localhost:3001/api/album",
+        "http://localhost:3001/api/subject/sienna/album",
     )
     inventory_url = _os.getenv(
         "PERSONA_IMAGE_INVENTORY",
-        "http://localhost:3001/api/album",
+        "http://localhost:3001/api/subject/sienna/album",
     )
 
     try:
@@ -935,11 +935,11 @@ async def photo_nsfw_command(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
     base_url = _os.getenv(
         "PERSONA_IMAGE_API",
-        "http://localhost:3001/api/album-nsfw",
+        "http://localhost:3001/api/subject/sienna/album-nsfw",
     )
     inventory_url = _os.getenv(
         "PERSONA_IMAGE_INVENTORY",
-        "http://localhost:3001/api/album-nsfw",
+        "http://localhost:3001/api/subject/sienna/album-nsfw",
     )
 
     try:
