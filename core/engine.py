@@ -179,6 +179,11 @@ class JungianEngine:
             user_input=message,
             ai_response=clean_response,
         )
+        self._persist_engagement_stress_score(
+            user_id=user_id,
+            conversation_id=conversation_id,
+            user_input=message,
+        )
         relational_availability = self._persist_relational_availability_exchange(
             user_id=user_id,
             conversation_id=conversation_id,
@@ -339,6 +344,11 @@ class JungianEngine:
             user_input=message,
             ai_response=clean_response,
         )
+        self._persist_engagement_stress_score(
+            user_id=user_id,
+            conversation_id=conversation_id,
+            user_input=message,
+        )
 
         logger.info(f"✅ Processamento completo (ID={conversation_id})")
         logger.info(f"{'='*60}\n")
@@ -381,6 +391,19 @@ class JungianEngine:
             )
         except Exception as exc:
             logger.warning("⚠️ [WILL] Falha ao persistir micro-sinal da conversa: %s", exc)
+
+    def _persist_engagement_stress_score(self, user_id: str, conversation_id: int, user_input: str) -> None:
+        try:
+            from engines.engagement_stress import EngagementStressEngine
+            engine = EngagementStressEngine(self.db)
+            engine.score_exchange(
+                user_id=str(user_id),
+                user_input=user_input,
+                conversation_id=conversation_id,
+                persona=os.getenv("PERSONA_NAME") or None,
+            )
+        except Exception as exc:
+            logger.warning("⚠️ [ENGAGEMENT_STRESS] Falha ao registrar score de estresse: %s", exc)
 
     def _persist_relational_availability_exchange(
         self,
